@@ -60,12 +60,11 @@ Then copy the `VOCdevkit/VOC2012` folder to `/data/datasets/VOC2012`. Lastly, co
 
 Then create a file with the labels/classes that will be trained on.
 
-    ```None
+    ```none
     cat
     dog
     cow
     person
-    ...
     ```
 
 ### Dataset Directory Structure
