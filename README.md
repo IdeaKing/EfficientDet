@@ -25,12 +25,12 @@ A pure WORKING Tensorflow2.0 implementation of EfficientDet for object detection
 ## Installation
 
     ```python
-    git clone https://github.com/IdeaKing/EfficientDet.git
-    cd efficientdet
-    python -m venv venv 
-    python -m pip install --upgrade pip
-    venv\Scripts\activate
-    pip install -r requirements.txt
+        git clone https://github.com/IdeaKing/EfficientDet.git
+        cd efficientdet
+        python -m venv venv 
+        python -m pip install --upgrade pip
+        venv\Scripts\activate
+        pip install -r requirements.txt
     ```
 
 ## Preparing the Dataset
