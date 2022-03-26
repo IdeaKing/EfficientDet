@@ -1,6 +1,6 @@
 # Tensorflow2.0 EfficientDet
 
-A pure WORKING Tensorflow2.0 implementation of EfficientDet for object detection.
+A pure WORKING Tensorflow2.0 implementation of EfficientDet for object detection. There are too many non-working versions of EfficientDet available. This attempt uses pure tf2.
 
 ## Table of Contents
 
