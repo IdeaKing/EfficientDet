@@ -8,6 +8,7 @@ A pure WORKING Tensorflow2.0 implementation of EfficientDet for object detection
 * [Preparing Dataset](#preparing-the-dataset)
 * [Training](#training)
 * [Testing](#testing)
+* [Pretrained Weights](#pretrained-weights)
 * [References](#references)
 * [License](#license)
 
@@ -263,6 +264,14 @@ optional arguments:
 --iou-threshold IOU_THRESHOLD
                         IOU threshold for NMS.
 ```
+
+## Pretrained Weights
+
+Models were trained on PascalVOC2012, tf saved models they can only be used for inference. Saved weights can be used for transfer learning. More models and weights to come soon!
+
+| Model | Model | Weights |
+| --- | --- | --- |
+| EfficientDet-D0 | [Link](https://drive.google.com/file/d/14TJdevtt8sG9gCJJ0aovO04hDvsZqOrr/view?usp=sharing) | [Link](https://drive.google.com/file/d/1X4rmnL7QKlM6f_xuqUaDPPEAXDI8JbOE/view?usp=sharing) |
 
 ## References
 
