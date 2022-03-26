@@ -1,98 +1,125 @@
 import os
-import sys
-from os.path import join, exists
-
-import numpy as np
-
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+import shutil
 import tensorflow as tf
 
-tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-
-from tensorflow.keras.utils import get_file
-from tensorflow.keras.optimizers import Adam
-from utils.data_loader import generator_fn
-from utils.util import AnchorParameters
-from nets.nn import build_model, regression_loss, classification_loss
-from nets.helper import BASE_WEIGHTS_PATH, WEIGHTS_HASHES
-from utils import config
-
-strategy = tf.distribute.MirroredStrategy()
-
-f_names = []
-with open(join(config.data_dir, 'labeled_train.txt')) as reader:
-    for line in reader.readlines():
-        f_names.append(line.rstrip().split(' ')[0])
-np.random.shuffle(f_names)
-dataset = tf.data.Dataset.from_generator(generator_fn(f_names), (tf.float32, tf.float32, tf.float32))
-dataset = dataset.batch(config.batch_size * strategy.num_replicas_in_sync)
-dataset = strategy.experimental_distribute_dataset(dataset)
-
-num_replicas = strategy.num_replicas_in_sync
-
-model, prediction_model = build_model(config.phi,
-                                        num_classes=len(config.classes),
-                                        num_anchors=AnchorParameters().num_anchors())
-if config.weight_path == 'imagenet':
-    model_name = 'efficientnet-b{}'.format(config.phi)
-    file_name = '{}_weights_tf_dim_ordering_tf_kernels_autoaugment_notop.h5'.format(model_name)
-    file_hash = WEIGHTS_HASHES[model_name][1]
-    weights_path = get_file(file_name,
-                            BASE_WEIGHTS_PATH + file_name,
-                            cache_subdir='models',
-                            file_hash=file_hash)
-    model.load_weights(weights_path, by_name=True)
-    for i in range(1, [227, 329, 329, 374, 464, 566, 656][config.phi]):
-        model.layers[i].trainable = False
-    optimizer = Adam(1e-3)
-else:
-    print('Loading model, this may take a second...')
-    model.load_weights(config.weight_path)
-    optimizer = Adam(5e-5)
-
-c_loss_object = classification_loss()
-r_loss_object = regression_loss()
+from typing import List, Tuple
 
 
-def compute_loss(label, box, y_pred):
-    c_loss = c_loss_object(label, y_pred[0])
-    r_loss = r_loss_object(box, y_pred[1])
-    total_loss = c_loss + r_loss
-    return tf.divide(tf.reduce_sum(total_loss), tf.constant(num_replicas, dtype=tf.float32))
+class Train:
+    def __init__(self,
+                 training_dir: str,
+                 epochs: int,
+                 total_steps: int,
+                 input_shape: Tuple[int, int] = (512, 512),
+                 precision: str = "float32",
+                 max_checkpoints: int = 10,
+                 checkpoint_frequency: int = 10,
+                 save_model_frequency: int = 10,
+                 print_loss: bool = True,
+                 log_every_step: int = 100,
+                 from_checkpoint: bool = False):
+        """ Trains the model.
 
-def train_step(image, label, box):
-    with tf.GradientTape() as tape:
-        y_pred = model(image)
+        Params:
+            training_dir (str): The filepath to the training directory
+            epochs (int): The number of epochs to train the model
+            total_steps (int): The total number of steps
+            precision (str): Can either be "float32" or "mixed_float16"
+            max_checkpoints (int): The total number of checkpoints to save
+        """
+        # Initialize the directories
+        if os.path.exists(training_dir) and from_checkpoint == False:
+            # Prevents accidental deletions
+            input("Press Enter to delete the current directory and continue.")
+            shutil.rmtree(training_dir)
+        else:
+            os.makedirs(training_dir)
 
-        loss = compute_loss(label, box, y_pred)
-    train_variable = model.trainable_variables
-    gradient = tape.gradient(loss, train_variable)
-    optimizer.apply_gradients(zip(gradient, train_variable))
-    return loss
+        # Tensorboard Logging
+        tensorboard_dir = os.path.join(
+            training_dir, "tensorboard")
+        if os.path.exists(tensorboard_dir) is False:
+            os.makedirs(tensorboard_dir)
+        tensorboard_file_writer = tf.summary.create_file_writer(
+            tensorboard_dir)
+        tensorboard_file_writer.set_as_default()
 
-@tf.function
-def distribute_train_step(image, label, box):
-    loss = train_step(image, label, box)
-    return loss
+        # Define the checkpoint directories
+        self.checkpoint_dir = os.path.join(
+            training_dir, "model")
+        # Define the full model directories
+        self.exported_dir = os.path.join(
+            training_dir, "model-exported")
 
+        self.epochs = epochs
+        self.total_steps = total_steps
+        self.steps_per_epoch = int(self.total_steps/self.epochs)
+        self.input_shape = input_shape
+        self.precision = precision
+        self.max_checkpoints = max_checkpoints
+        self.checkpoint_frequency = checkpoint_frequency
+        self.save_model_frequency = save_model_frequency
+        self.print_loss = print_loss
+        self.log_every_step = log_every_step
+        self.from_checkpoint = from_checkpoint
 
-def main():
-    if not exists(join('weights', f'D{config.phi}')):
-        os.makedirs(join('weights', f'D{config.phi}'))
-    with open(join('weights', 'history.txt'), 'w') as writer:
-        print(f"--- Training with {config.steps} Steps ---")
-        for step, inputs in enumerate(dataset):
-            step += 1
-            image, label, box = inputs
-            loss = distribute_train_step(image, label, box)
-            loss = f'{loss.numpy():.8f}'
-            print(f'[{step}] - {loss}')
-            writer.write(f'{step}\t{loss}\n')
-            if step % config.steps == 0:
-                model.save_weights(join("weights", f'D{config.phi}', f'model{step // config.steps}.h5'))
-            if step // config.steps == config.epochs:
-                sys.exit("--- Stop Training ---")
+    def supervised(self,
+                   dataset: tf.data.Dataset,
+                   model: tf.keras.models.Model,
+                   optimizer: tf.keras.optimizers.Optimizer,
+                   losses: List or tf.keras.losses.Loss):
+        """Supervised training on the model."""
+        # Checkpointing Functions
+        checkpoint = tf.train.Checkpoint(
+            model=model)
+        checkpoint_manager = tf.train.CheckpointManager(
+            checkpoint,
+            self.checkpoint_dir,
+            self.max_checkpoints)
+        
+        if self.from_checkpoint:
+            checkpoint.restore(checkpoint_manager.latest_checkpoint)
+            print("Restored from checkpoint: {}".format(
+                checkpoint_manager.latest_checkpoint))
 
+        @tf.function
+        def train_step(x, y):
+            with tf.GradientTape() as tape:
+                preds = model(x, training=True)
+                # Run losses
+                if isinstance(losses, list):
+                    loss = 0
+                    for loss_func in losses:
+                        loss += loss_func(y_true=y, y_pred=preds)
+                else:
+                    loss = losses(y_true=y, y_pred=preds)
+                if self.precision == "mixed_float16":
+                    loss = optimizer.get_scaled_loss(loss)
+            gradients = tape.gradient(
+                target=loss,
+                sources=model.trainable_variables)
+            if self.precision == "mixed_float16":
+                gradients = optimizer.get_unscaled_gradients(gradients)
+            optimizer.apply_gradients(
+                grads_and_vars=zip(gradients, model.trainable_variables))
+            return loss
 
-if __name__ == '__main__':
-    main()
+        global_step = 0
+        for epoch in range(self.epochs):
+            print(f"Epoch: {epoch}")
+            for step, (images, label_cls, label_bbx) in enumerate(dataset):
+                labels = (label_cls, label_bbx)
+                loss = train_step(images, labels)
+                if self.print_loss:
+                    print(f"Epoch {epoch} Step {step}/{self.steps_per_epoch}", \
+                            f"loss {loss}")
+                if global_step % self.checkpoint_frequency == 0:
+                    checkpoint_manager.save()
+                global_step = global_step + 1
+
+            if epoch % self.save_model_frequency == 0:
+                tf.keras.models.save_model(
+                    model, self.exported_dir)
+
+        print("Finished training.")
+        return model
