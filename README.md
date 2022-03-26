@@ -2,6 +2,16 @@
 
 A pure WORKING Tensorflow2.0 implementation of EfficientDet for object detection.
 
+## Sample Detections
+
+| Dog | People |
+| --- | --- |
+|![Dog](https://github.com/IdeaKing/EfficientDet/blob/main/docs/2010_000183.jpg) | ![People](https://github.com/IdeaKing/EfficientDet/blob/main/docs/2010_000358.jpg) |
+
+| Bird | Plane |
+| --- | --- |
+|![Bird](https://github.com/IdeaKing/EfficientDet/blob/main/docs/2010_000184.jpg) | ![Plane](https://github.com/IdeaKing/EfficientDet/blob/main/docs/2010_000392.jpg) |
+
 ## Installation
 
 ```python
