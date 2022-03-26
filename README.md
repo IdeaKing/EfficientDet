@@ -267,10 +267,10 @@ To test the trained model run the following command.
 
 ## References
 
-[1] [Official Repo](https://github.com/google/automl/tree/master/efficientdet)
-[2] [Paper](https://arxiv.org/abs/1906.02768)
-[3] [https://github.com/joydeepmedhi/Anchor-Boxes-with-KMeans]
-[4] [https://github.com/fizyr/keras-retinanet]
+    [1] [Official Repo](https://github.com/google/automl/tree/master/efficientdet)
+    [2] [Paper](https://arxiv.org/abs/1906.02768)
+    [3] [https://github.com/joydeepmedhi/Anchor-Boxes-with-KMeans]
+    [4] [https://github.com/fizyr/keras-retinanet]
 
 ## License
 
