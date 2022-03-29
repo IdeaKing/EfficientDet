@@ -151,4 +151,4 @@ if __name__ == "__main__":
              score_threshold=args.score_threshold,
              iou_threshold=args.iou_threshold)
 
-        break
+    print(f"Testing complete, the outputs are found at {args.save_image_dir}")
