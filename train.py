@@ -77,6 +77,10 @@ class Train:
             self.checkpoint_dir,
             self.max_checkpoints)
         
+        if self.precision == "mixed_float16":
+            optimizer = tf.keras.mixed_precision.LossScaleOptimizer(optimizer)
+
+        
         if self.from_checkpoint:
             checkpoint.restore(checkpoint_manager.latest_checkpoint)
             print("Restored from checkpoint: {}".format(
