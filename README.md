@@ -228,7 +228,7 @@ tensorboard --logdir=<path_to_training_dir/tensorboard>
 To test the trained model run the following command.
 
 ```cmd
-python inference.py --training-image-dir <path_to_testing_images_dir> \
+python inference.py --testing-image-dir <path_to_testing_images_dir> \
                     --save-image-dir <path_to_save_dir> \
                     --model <path_to_model> \
                     --labels-file <path_to_labels_file> \
@@ -275,10 +275,10 @@ Models were trained on PascalVOC2012, tf saved models they can only be used for 
 
 ## References
 
-    [1] [Official Repo](https://github.com/google/automl/tree/master/efficientdet)
-    [2] [Paper](https://arxiv.org/abs/1906.02768)
-    [3] [https://github.com/joydeepmedhi/Anchor-Boxes-with-KMeans]
-    [4] [https://github.com/fizyr/keras-retinanet]
+[1] [Official Repo](https://github.com/google/automl/tree/master/efficientdet)
+[2] [Paper](https://arxiv.org/abs/1906.02768)
+[3] [https://github.com/joydeepmedhi/Anchor-Boxes-with-KMeans]
+[4] [https://github.com/fizyr/keras-retinanet]
 
 ## License
 
