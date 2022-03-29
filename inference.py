@@ -9,6 +9,7 @@ import argparse
 import shutil
 import tensorflow as tf
 
+from typing import Union
 from tqdm import tqdm
 
 from utils.postprocess import FilterDetections
@@ -17,7 +18,7 @@ from utils.file_reader import parse_label_file
 
 
 def preprocess_image(image_path: str, 
-                     image_dims: tuple) -> tf.Tensor:
+                     image_dims: tuple) -> Union[tf.Tensor, tuple]:
     """Preprocesses an image.
         
     Parameters:
@@ -25,16 +26,18 @@ def preprocess_image(image_path: str,
         image_dims: The dimensions to resize the image to
     Returns:
         A preprocessed image with range [0, 255]
+        A Tuple of the original image shape (w, h)
     """
     image = tf.io.read_file(image_path)
     image = tf.io.decode_image(image)
+    original_shape = tf.shape(image)
     image = tf.image.resize(images=image,
                             size=image_dims,
                             method="bilinear")
     image = tf.expand_dims(image, axis=0)
     image = tf.cast(image, tf.float32)
     # Image is on scale [0-255]
-    return image
+    return image, (original_shape[1], original_shape[0])
 
 
 def test(image_path: str, 
@@ -59,7 +62,7 @@ def test(image_path: str,
     Returns:
         None
     """
-    image = preprocess_image(
+    image, original_shape = preprocess_image(
         os.path.join(image_dir, image_path), image_dims)
 
     pred_cls, pred_box = model(image, training=False)
@@ -77,6 +80,8 @@ def test(image_path: str,
 
     image = draw_boxes(
         image=tf.squeeze(image, axis=0),
+        original_shape=original_shape,
+        resized_shape=image_dims,
         bboxes=bboxes,
         labels=labels,
         scores=scores,
@@ -86,9 +91,6 @@ def test(image_path: str,
 
 
 if __name__ == "__main__":
-    # Supress warnings
-    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-
     # Parse arguments
     parser = argparse.ArgumentParser(
         description="Run EfficientDet Tests",
@@ -148,3 +150,5 @@ if __name__ == "__main__":
              label_dict=label_dict,
              score_threshold=args.score_threshold,
              iou_threshold=args.iou_threshold)
+
+        break
