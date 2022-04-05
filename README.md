@@ -42,10 +42,10 @@ All labels must be in xml Pascal VOC format.
 
 ### Training on your own dataset
 
-Use [LabelMe](https://github.com/wkentaro/labelme) to label and create your own dataset. Make sure to save in PascalVOC format.
+Use [LabelImg](https://github.com/tzutalin/labelImg) to label and create your own dataset. Make sure to save in PascalVOC format.
 
 ```python
-pip install labelme
+pip install labelimg
 labelme
 ```
 
