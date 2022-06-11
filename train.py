@@ -120,7 +120,18 @@ class Train:
                 if global_step % self.checkpoint_frequency == 0:
                     checkpoint_manager.save()
                 global_step = global_step + 1
-
+                
+                # Update the learning rate
+                # optimizer.learning_rate.assign(
+                #     updated_learning_rate(
+                #         global_step, 
+                #         learning_rate,
+                #         self.total_steps))
+                
+                # Update Tensorboard
+                tf.summary.scalar("Loss", loss, step=global_step)
+                tf.summary.scalar("Learning Rate", optimizer.learning_rate, step=global_step)
+                
             if epoch % self.save_model_frequency == 0:
                 tf.keras.models.save_model(
                     model, self.exported_dir)
