@@ -42,7 +42,12 @@ def main(args):
         optimizer = tf.keras.optimizers.SGD(learning_rate=args.learning_rate,
                                             momentum=args.optimizer_momentum)
     elif args.optimizer == "ADAM":
-        optimizer = tf.keras.optimizers.Adam(learning_rate=args.learning_rate)
+        lr = tf.keras.optimizers.schedules.ExponentialDecay(
+            args.learning_rate,
+            decay_steps=int(0.01 * total_steps),
+            decay_rate=0.96,
+            staircase=False)
+        optimizer = tf.keras.optimizers.Adam(learning_rate=lr)    
     else:
         raise ValueError(f"{args.optimizer} is not an available optimizer")
 
