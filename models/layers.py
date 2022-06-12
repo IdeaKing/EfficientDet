@@ -41,7 +41,7 @@ class BiFPNLayerNode(tf.keras.layers.Layer):
             depth_multiplier=self.depth_multiplier,
             pointwise_initializer=tf.initializers.variance_scaling(),
             depthwise_initializer=tf.initializers.variance_scaling(),
-            name='node_conv'
+            name='node_conv',
         )
 
         self.bn = tf.keras.layers.BatchNormalization()
@@ -246,6 +246,7 @@ class ClassDetector(tf.keras.layers.Layer):
             pointwise_initializer=tf.initializers.variance_scaling(),
             depthwise_initializer=tf.initializers.variance_scaling(),
             bias_initializer=bias_init,
+            dtype="float32",
             name='class_preds'
         )
 
@@ -315,6 +316,7 @@ class BoxRegressor(tf.keras.layers.Layer):
             pointwise_initializer=tf.initializers.variance_scaling(),
             depthwise_initializer=tf.initializers.variance_scaling(),
             bias_initializer=tf.zeros_initializer(),
+            dtype="float32",
             name='box_preds'
         )
 
